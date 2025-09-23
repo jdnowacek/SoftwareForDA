@@ -1,0 +1,102 @@
+---
+title: "C6exs"
+format: pdf
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+```
+
+# Chapter 6
+
+```{r}
+x <- matrix(1:12, 3, 4)
+x
+```
+
+```{r}
+fmax <- function(x){
+  return(max(x))
+}
+
+y <- c(1, 2, 3, 4, 5)
+
+fmax(y)
+```
+
+```{r}
+maxes <- apply(x, 2, fmax)
+maxes
+```
+
+Solution:
+
+```{r}
+t(apply(x, 2, range))
+```
+
+```{r}
+d <- read.csv("worms.csv")
+
+# doesnt work bc of non-numerical values
+# apply(d, 2, mean)
+
+d_no_veg <- d |>
+  select(-c(Vegetation, Field.Name, Damp))
+
+mean_nu <- function(x){
+  mean(as.numeric(as.character(x)))
+}
+
+apply(d_no_veg, 2, mean_nu)
+
+apply(d_no_veg, 1, mean)
+
+apply(d_no_veg, 1, max)
+apply(d_no_veg, 1, min)
+
+```
+
+```{r}
+# sapply() example
+
+sp <- split(d_no_veg, d$Vegetation)
+
+sp
+
+class(sp)
+
+length(sp)
+
+lapply(sp, function(x){apply(x, 2, mean_nu)})
+
+sapply(sp, function(x){apply(x, 2, mean_nu)})
+
+d_no_veg <- as.numeric(d_no_veg)
+
+tapply(d_no_veg$Soil.pH, d$Vegetation, mean)
+```
+
+# Chapter 7
+
+```{r}
+par(mfrow = c(2, 2))
+
+plot(d$Area, d$Worm.density)
+
+hist(d$Soil.pH)
+
+plot(density(d$Soil.pH))
+
+plot(d$Area, d$Worm.density, cex = sqrt(d$Soil.pH))
+    
+```
+
+```{r}
+ggplot(d) +
+  aes(x = Area, y = Worm.density) +
+  geom_point() +
+  facet_wrap()
+  theme_bw()
+```
