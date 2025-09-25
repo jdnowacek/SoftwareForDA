@@ -1,0 +1,132 @@
+---
+title: "DataVizExs"
+format: html
+---
+
+
+```{r}
+library(tidyverse)
+library(gapminder)
+library(ggpubr)
+library(gganimate)
+```
+
+```{r}
+data("gapminder")
+```
+
+```{r}
+p <- gapminder |>
+  filter(year == 1952) |>
+  ggplot(aes(x = gdpPercap, y = lifeExp, colour = continent, size = pop)) +
+  geom_point() +
+  theme_bw()
+
+p + scale_x_log10()
+```
+
+```{r}
+p <- gapminder |>
+  ggplot(aes(x = log10(gdpPercap), y = lifeExp, colour = continent, size = pop)) +
+  geom_point() +
+  transition_states(year,
+                    transition_length = 2, 
+                    state_length = 1) +
+  enter_fade() +
+  exit_shrink() +
+  ease_aes('sine-in-out') +
+  theme_bw()
+
+p 
+```
+
+
+```{r}
+gapminder |>
+  filter(continent != "Oceania") |>
+  ggplot(aes(x = gdpPercap, group = continent, fill = continent)) +
+  geom_density(alpha = 0.5, color = "black") +
+  theme_bw()
+```
+## Extension Ex
+
+```{r}
+d <- readRDS("ff.rds")
+```
+
+```{r}
+p1_data <- d |>
+  filter(group == 1)
+
+
+p1 <- ggplot(aes(x = thorax, y = longevity), data = p1_data) +
+  geom_point(shape = 17) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_x_continuous(limits = c(0.6, 1.0)) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  theme(legend.position = "none") +
+  labs(y = "Longevity", x = "") 
+
+p1
+```
+
+
+```{r}
+p2_data <- d |>
+  filter(group %in% c(2, 4))
+
+p2 <- ggplot(p2_data, aes(x = thorax, y = longevity, group = group)) +
+  geom_point(aes(shape = group)) +
+  geom_smooth(aes(linetype = group), method = "lm", se = FALSE, color = "black") +
+  scale_shape_manual(values = c("2" = 2, "4" = 17)) +
+  scale_linetype_manual(values = c("2" = "dashed", "4" = "solid")) +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_x_continuous(limits = c(0.6, 1.0)) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  theme(legend.position = "none") +
+  labs(x = "Thorax length (mm)", y = "")
+
+p2
+```
+
+
+```{r}
+p3_data <- d |>
+  filter(group %in% c(3, 5))
+
+p3 <- ggplot(p3_data, aes(x = thorax, y = longevity, group = group)) +
+  geom_point(aes(shape = group)) +
+  geom_smooth(aes(linetype = group), method = "lm", se = FALSE, color = "black") +
+  scale_shape_manual(values = c("3" = 2, "5" = 17)) +
+  scale_linetype_manual(values = c("3" = "dashed", "5" = "solid")) +
+  scale_y_continuous(limits = c(0, 90), breaks = seq(0, 80, 20)) +
+  scale_x_continuous(limits = c(0.6, 1.0)) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  theme(legend.position = "none") +
+  labs(x = "Thorax length (mm)", y = "")
+
+p3
+```
+
+```{r}
+p4 <- 
+```
+
+
+```{r}
+ggarrange(p1, p2, p3, ncol = 2, nrow = 2, align = 'h')
+```
+
+
+
+
+
+
+
+
+
+
