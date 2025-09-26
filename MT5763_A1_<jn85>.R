@@ -172,3 +172,108 @@ games(1000000)
 
 
 
+
+
+
+
+
+
+
+
+
+# Problem B
+# 1. 
+
+
+board <- function(n, a){ 
+  
+  current = a
+  outcomes <- rep(0, n)
+  
+  for (i in 1:n) {
+
+    flip <- rbinom(1, 1, 0.5)
+    potential = ifelse(flip == 1, current + 1, current - 1)
+    
+    red <- rep(0, current)
+    blue <- rep(1, potential)
+    
+    full <- c(red, blue)
+    
+    pick <- sample(full, 1)
+    
+    current <- ifelse(pick == 1, potential, current)
+    
+    outcomes[i] <- current
+  }
+  print(outcomes)
+}
+
+# board(30, 1)
+
+# 2. 
+
+multi_board <- function(n, a, N){ 
+  
+  mat <- matrix(NA, nrow = n, ncol = N)
+ 
+  
+  for (j in 1:N){
+    
+    outcomes <- rep(0, n)
+    current = a
+
+    
+    for (i in 1:n) {
+      
+      flip <- rbinom(1, 1, 0.5)
+      potential = ifelse(flip == 1, current + 1, current - 1)
+      
+      potential = ifelse(potential == 13, 1, potential)
+      
+      red <- rep(0, current)
+      blue <- rep(1, potential)
+      
+      full <- c(red, blue)
+      
+      pick <- sample(full, 1)
+      
+      current <- ifelse(pick == 1, potential, current)
+      
+      outcomes[i] <- current
+      
+      mat[,j] <- outcomes
+    }
+    
+  }
+  print(mat)
+  
+  d <- as.data.frame(mat)
+  
+  
+}
+
+multi_board(30, 1, 10)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
