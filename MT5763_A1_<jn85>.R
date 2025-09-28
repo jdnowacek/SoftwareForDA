@@ -76,8 +76,8 @@ sample(seq(1, 12, 1), 1) -  sum((sample(seq(1, 6, 1), 2, replace = TRUE)))
   }
  
  games(10)
- games(-2)
- games(4.7)
+ # games(-2)
+ # games(4.7)
  
 # 4. 
  
@@ -246,15 +246,151 @@ multi_board <- function(n, a, N){
     }
     
   }
-  print(mat)
+  # print(mat)
   
   d <- as.data.frame(mat)
   
+  prop_12s <- d |>
+    summarise(across(everything(), ~ any(.x == 12))) |>
+    select(where(~ .x)) |>
+    ncol()
+  
+  prop_12s <- tibble(prop = prop_12s / ncol(d))
+  
+  ggplot(prop_12s, aes(x = "Proportion", y = prop)) +
+    geom_col() +
+    # geom_text(aes(label = round(prop, 3)), vjust = -0.5) +
+    geom_text(aes(label = paste("Out of", N, "trials,", prop_12s$prop*N, 
+                                "game(s) contained a 12", "(", prop_12s*100, "%).")), vjust = -2) +
+    scale_y_continuous(limits = c(0, prop_12s$prop * 2)) +
+    labs(x = "", y = "Proportion of games with a 12") +
+    theme_bw()
+    
+}
+
+multi_board(30, 1, 1000)
+
+
+# 3. 
+
+points_board <- function(n, a, N){ 
+  
+  mat <- matrix(NA, nrow = n, ncol = N)
+  
+  
+  for (j in 1:N){
+    
+    outcomes <- rep(0, n)
+    current = a
+    
+    
+    for (i in 1:n) {
+      
+      flip <- rbinom(1, 1, 0.5)
+      potential = ifelse(flip == 1, current + 1, current - 1)
+      
+      potential = ifelse(potential == 13, 1, potential)
+      
+      red <- rep(0, current)
+      blue <- rep(1, potential)
+      
+      full <- c(red, blue)
+      
+      pick <- sample(full, 1)
+      
+      current <- ifelse(pick == 1, potential, current)
+      
+      outcomes[i] <- current
+      
+      mat[,j] <- outcomes
+    }
+    
+  }
+  # print(mat)
+  
+  d <- as.data.frame(mat)
+  
+  sums <- d |>
+    colSums()
+  
+  sums <- as.data.frame(sums)
+  
+  sums |>
+    ggplot(aes(x = sums)) +
+    geom_histogram(binwidth = 10) +
+    theme_bw() +
+    labs(x = "Score", y = "Frequency")
   
 }
 
-multi_board(30, 1, 10)
+points_board(30, 1, 1000)
 
+
+# 4. 
+
+avg_points_board <- function(N){ 
+  
+  a <- 6
+  n <- 30
+  
+  mat <- matrix(NA, nrow = n, ncol = N)
+  
+  
+  for (j in 1:N){
+    
+    outcomes <- rep(0, n)
+    current = a
+    
+    
+    for (i in 1:n) {
+      
+      flip <- rbinom(1, 1, 0.5)
+      potential = ifelse(flip == 1, current + 1, current - 1)
+      
+      potential = ifelse(potential == 13, 1, potential)
+      
+      red <- rep(0, current)
+      blue <- rep(1, potential)
+      
+      full <- c(red, blue)
+      
+      pick <- sample(full, 1)
+      
+      current <- ifelse(pick == 1, potential, current)
+      
+      outcomes[i] <- current
+      
+      mat[,j] <- outcomes
+    }
+    
+  }
+  # print(mat)
+  
+  d <- as.data.frame(mat)
+  
+  sums <- d |>
+    colSums()
+  
+  sums_df <- as.data.frame(sums)
+  
+  summaries <- sums_df |>
+    summarize(n = n(),
+      avg = mean(sums),
+      sd = sqrt(var(sums)),
+      lower = avg - 1.96 * sd/sqrt(n),
+      upper = avg + 1.96 * sd/sqrt(n))
+  
+  
+  
+  # sums_df |>
+  #   ggplot(aes(x = sums)) +
+  #   geom_boxplot() +
+  #   theme_bw() +
+  #   labs(x = "Score", y = "")
+  
+}
+
+avg_points_board(1000)
 
 
 
