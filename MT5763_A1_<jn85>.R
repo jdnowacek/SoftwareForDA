@@ -209,7 +209,7 @@ board <- function(n, a){
   print(outcomes)
 }
 
-# board(30, 1)
+board(30, 1)
 
 # 2. 
 
@@ -311,13 +311,14 @@ points_board <- function(n, a, N){
   d <- as.data.frame(mat)
   
   sums <- d |>
-    colSums()
+    colSums()/30
   
   sums <- as.data.frame(sums)
   
   sums |>
     ggplot(aes(x = sums)) +
-    geom_histogram(binwidth = 10) +
+    geom_histogram(binwidth = 0.5) +
+    scale_x_continuous(minor_breaks = seq(0, max(sums), 0.5)) +
     theme_bw() +
     labs(x = "Score", y = "Frequency")
   
@@ -369,7 +370,7 @@ avg_points_board <- function(N){
   d <- as.data.frame(mat)
   
   sums <- d |>
-    colSums()
+    colSums()/30
   
   sums_df <- as.data.frame(sums)
   
@@ -380,7 +381,9 @@ avg_points_board <- function(N){
       lower = avg - 1.96 * sd/sqrt(n),
       upper = avg + 1.96 * sd/sqrt(n))
   
-  
+  paste0("After ", N, " trials, the mean number of points over 30 rounds is ", 
+         round(summaries$avg, 3), ", and the 95% confidence interval is (", 
+         round(summaries$lower, 3), ", ", round(summaries$upper, 3), ")")
   
   # sums_df |>
   #   ggplot(aes(x = sums)) +
