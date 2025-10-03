@@ -2,11 +2,15 @@
 # Thursday Sept 25, 2025
 
 library(tidyverse)
-# library(erify)
 set.seed(3)
 
 # Problem A: 
 # 1. 
+
+# my interpretation of part 1 here is that I should just run the game a few
+# times to explore the game, before truly analyzing the expected probabilities
+# later in the process. These estimates are replaced with a more reliable 
+# process later.
 
 res <- rep(0, 10)
 
@@ -32,9 +36,9 @@ res
  single_game <- function(){
    x <- (sample(seq(1, 12, 1), 1) -  sum((sample(seq(1, 6, 1), 2, replace = TRUE))))
    case_when(
-     x > 0 ~ "1",
-     x == 0 ~ "0",
-     x < 0 ~ "2"
+     x > 0 ~ 1,
+     x == 0 ~ 0,
+     x < 0 ~ 2
    )
  }
  
@@ -51,13 +55,11 @@ res
  # probability of each of the three outcomes.
  
  games <- function(N){ # N allows us to change the number of games played
-
-   check <- installr:::check.integer(N)
-   # function from installr that checks if N is a positive integer
    
-   if (check == "FALSE") {
-     throw("The N value proided is not an integer, try using a positive whole number.")
-   } # throws an error message if the check is failed, i.e. N is not a positive integer
+   if (!is.numeric(N) || N <= 0 || N != floor(N)) {
+     cat(sprintf("The N value proided is not an integer, try using a positive whole number. You provided %s.\n", N))
+     return(invisible(NULL)) # Stop execution and return nothing
+   }
    
    
    x <- vector(length = N)
@@ -88,8 +90,8 @@ res
   }
  
  games(10)
- # games(-2)
- # games(4.7)
+ games(-2)
+ games(4.7)
  
 # 4. 
  
@@ -106,10 +108,9 @@ res
 
  games_viz <- function(N){
    
-   check <- installr:::check.integer(N)
-   
-   if (check == "FALSE") {
-     throw("The N value proided is not an integer, try using a positive whole number.")
+   if (!is.numeric(N) || N <= 0 || N != floor(N)) {
+     cat(sprintf("The N value proided is not an integer, try using a positive whole number. You provided %s.\n", N))
+     return(invisible(NULL)) # Stop execution and return nothing
    }
    
    x <- vector(length = N)
@@ -138,18 +139,12 @@ res
    d <- data.frame(res)
    
    plot_data <- d |>
-     mutate(res_num = case_when(
-       res == "Player 1 Win" ~ 1,
-       res == "Player 2 Win" ~ 1,
-       res == "Tie" ~ 1
-     )) |>
-     group_by(res) |>
-     summarise(n = n(),
-               prop = sum(res_num)/N,
-               sd = sqrt(prop*(1-prop)),
-               upper = prop + (1.96 * (sd / sqrt(n))),
-               lower = prop - (1.96 * (sd / sqrt(n)))) |>
-     ungroup()
+     count(res) |>
+     group_by() |>
+     mutate(prop = n / N,
+            sd = sqrt(prop*(1 - prop) / N),
+            lower = prop - 1.96 * sd,
+            upper = prop + 1.96 * sd)
    
    ggplot(plot_data, aes(x = res, y = prop, fill = res)) +
      geom_col() +
@@ -164,17 +159,20 @@ res
 
 games_viz(10000)
 
+# From those two pieces of analysis, I would prefer to be player 2 in this game.
+
 
 # 5. 
 
-games_est <- function(N){ # N allows us to change the number of games played
+# to show the effect of changing the number of games played on the variability
+# in the estimates:
+
+games_est_mod <- function(N){ # N allows us to change the number of games played
   
-  check <- installr:::check.integer(N)
-  # function from installr that checks if N is a positive integer
-  
-  if (check == "FALSE") {
-    throw("The N value proided is not an integer, try using a positive whole number.")
-  } # throws an error message if the check is failed, i.e. N is not a positive integer
+  if (!is.numeric(N) || N <= 0 || N != floor(N)) {
+    cat(sprintf("The N value proided is not an integer, try using a positive whole number. You provided %s.\n", N))
+    return(invisible(NULL)) # Stop execution and return nothing
+  }
   
   
   x <- vector(length = N)
@@ -201,130 +199,51 @@ games_est <- function(N){ # N allows us to change the number of games played
   
   d <- as.data.frame(matrix(
     data = c(p1_prop, p2_prop, tie_prop, p1_sd, p2_sd, tie_sd),
-         nrow = 3, ncol = 2))
+    nrow = 3, ncol = 2))
   
   d <- d |>
-    mutate(prop = V1,
-           sd = V2,
+    mutate(prop = round(V1, 5),
+           sd = round(V2, 5),
            id = c("p1", "p2", "tie")) |>
     select(-c(V1, V2)) |>
     select(c(id, prop, sd)) |>
-    mutate(lower = prop - 1.96*sd,
-           upper = prop + 1.96*sd)
+    mutate(lower = round(prop - 1.96*sd, 5),
+           upper = round(prop + 1.96*sd, 5),
+           width = upper - lower)
   
-  p <- d |>
-    ggplot(aes(x = id, y = prop)) +
-    geom_col() +
-    geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
-    theme_bw()
-  
-  print(p)
-  
-  cat(paste0("The 95% confidence interval on the proportion of games where player 1 wins ranges from ", 
-             round(d$lower[1], 2), " to ", round(d$upper[1], 2), "\n"))
-  
-  cat(paste0("The 95% confidence interval on the proportion of games where player 2 wins ranges from ", 
-             round(d$lower[2], 2), " to ", round(d$upper[2], 2), "\n"))
-  
-  cat(paste0("The 95% confidence interval on the proportion of games where the players tie ranges from ", 
-             round(d$lower[3], 2), " to ", round(d$upper[3], 2), "\n"))
+  return(d)
   
 }
 
-games_est(10000)
+games_est_mod(1000)
+games_est_mod(10000)
+games_est_mod(100000)
 
-# The output at 10,000 iterations shows that the 95% confidence intervals for 
-# the empirical probabilities of each outcome are within two decimal places, 
-# indicating relative certainty about those estimates at that level of 
-# specificity.
+# These three outputs show the shrinking of confidence intervals that result 
+# from changing the number of games run.
 
+games_iterate <- function(N_start) {
+  
+  N <- N_start
+  result <- games_est_mod(N)
+  
+  while (any(result$width > 0.0025)) { 
+    # 0.0025 chosen since then the width of the 95% CI is less than half of the
+    # second decimal point and will not allow for rounding to a different value
+    # of that second decimal point
+    
+    N <- N + 2500
+    result <- games_est_mod(N)
+  }
+  
+  return(list(N_final = N, result = result))
+}
 
-# The following function was a different approach to this problem, iterating a
-# certain number of games many times, to take a mean and variance instead of 
-# a proportion and its variance. 
+games_iterate(600000)
 
-# games_est <- function(N, nit){ 
-#   # N allows us to change the number of games played
-#   # nit allows us to change the number of times that number of games is iterated
-#   
-#   check <- installr:::check.integer(N)
-#   # function from installr that checks if N is a positive integer
-#   
-#   if (check == "FALSE") {
-#     throw("The N value proided is not an integer, try using a positive whole number.")
-#   } # throws an error message if the check is failed, i.e. N is not a positive integer
-#   
-#   x <- vector(length = N)
-#   
-#   p1 <- rep(0, N)
-#   tie <- rep(0, N)
-#   p2 <- rep(0, N)
-#   
-#   res_matrix <- matrix(NA, ncol = 3, nrow = nit)
-#   
-#   for (j in 1:nit) {
-#     
-#     res_vec <- rep(NA, N)
-#     
-#     for (i in 1:N) {
-#       x[i] <- sample(1:12, 1) - sum(sample(1:6, 2, replace = TRUE))
-#       res_vec[i] <- case_when(
-#         x[i] > 0 ~ 1,
-#         x[i] < 0 ~ 2,
-#         TRUE ~ 0
-#       )
-#     }
-#     
-#     p1_sample <- sum(res_vec == 1)/N
-#     p2_sample <- sum(res_vec == 2)/N
-#     tie_sample <- sum(res_vec == 0)/N
-#     
-#     res_matrix[j, 1] <- p1_sample
-#     res_matrix[j, 2] <- p2_sample
-#     res_matrix[j, 3] <- tie_sample
-#     
-#   }
-#   d <- as.data.frame(res_matrix)
-#   
-#   d <- d |>
-#     mutate(P1_win_prop = V1,
-#            P2_win_prop = V2,
-#            tie_win_prop = V3) |>
-#     select(-c(V1, V2, V3))
-#   
-#   p1_win <- d |>
-#     summarise(mean = mean(P1_win_prop),
-#               var = var(P1_win_prop))
-#   p1_win
-#   
-#   d |>
-#     ggplot(aes(x = P1_win_prop)) +
-#     geom_histogram(binwidth = 0.005) +
-#     theme_bw()
-#   
-#   d |>
-#     ggplot(aes(x = P2_win_prop)) +
-#     geom_histogram(binwidth = 0.005) +
-#     theme_bw()
-#   
-#   d |>
-#     ggplot(aes(x = tie_win_prop)) +
-#     geom_histogram(binwidth = 0.005) +
-#     theme_bw()
-#   
-# }
-# 
-# games_est(10000, 1000)
-# 
-# # To evaluate the variability in the estimates, here are several outputs with
-# # varying numbers of iterations, showing their estimates.
-
-
-
-
-
-
-
+# This function shows the number of games, within 2500, that it takes to get
+# a 95% CI that shows certainty to two decimal places, and the estimates at that
+# number of games.
 
 
 # Problem B
@@ -339,7 +258,11 @@ board <- function(n, a){
   for (i in 1:n) {
 
     flip <- rbinom(1, 1, 0.5)
+    
     potential = ifelse(flip == 1, current + 1, current - 1)
+    
+    potential = ifelse(potential == 13, 1, potential)
+    potential = ifelse(potential == 0, 12, potential)
     
     red <- rep(0, current)
     blue <- rep(1, potential)
@@ -355,7 +278,8 @@ board <- function(n, a){
   print(outcomes)
 }
 
-board(30, 1)
+board(30, 1) 
+
 
 # 2. 
 
@@ -373,9 +297,11 @@ multi_board <- function(n, a, N){
     for (i in 1:n) {
       
       flip <- rbinom(1, 1, 0.5)
+      
       potential = ifelse(flip == 1, current + 1, current - 1)
       
       potential = ifelse(potential == 13, 1, potential)
+      potential = ifelse(potential == 0, 12, potential)
       
       red <- rep(0, current)
       blue <- rep(1, potential)
@@ -388,9 +314,8 @@ multi_board <- function(n, a, N){
       
       outcomes[i] <- current
       
-      mat[,j] <- outcomes
     }
-    
+    mat[, j] <- outcomes
   }
   # print(mat)
   
@@ -432,7 +357,7 @@ multi_board <- function(n, a, N){
   ggplot(props, aes(x = factor(square), y = mean_prop)) +
     geom_col() +
     theme_bw() +
-    labs(x = "Square", y = "Mean proportion across games with 30 moves")
+    labs(x = "Square", y = "Proportion of each square in 30 moves")
     
 }
 
@@ -455,9 +380,11 @@ points_board <- function(n, a, N){
     for (i in 1:n) {
       
       flip <- rbinom(1, 1, 0.5)
+      
       potential = ifelse(flip == 1, current + 1, current - 1)
       
       potential = ifelse(potential == 13, 1, potential)
+      potential = ifelse(potential == 0, 12, potential)
       
       red <- rep(0, current)
       blue <- rep(1, potential)
@@ -469,9 +396,9 @@ points_board <- function(n, a, N){
       current <- ifelse(pick == 1, potential, current)
       
       outcomes[i] <- current
-      
-      mat[,j] <- outcomes
     }
+    
+    mat[, j] <- outcomes
     
   }
   # print(mat)
@@ -479,14 +406,14 @@ points_board <- function(n, a, N){
   d <- as.data.frame(mat)
   
   sums <- d |>
-    colSums()/30
+    colSums()/n
   
   sums <- as.data.frame(sums)
   
   sums |>
     ggplot(aes(x = sums)) +
     geom_histogram(binwidth = 0.5) +
-    scale_x_continuous(minor_breaks = seq(0, max(sums), 0.5)) +
+    # scale_x_continuous(minor_breaks = seq(0, max(sums$sums), 0.5)) +
     theme_bw() +
     labs(x = "Average Score per Move", y = "Frequency")
   
@@ -495,12 +422,11 @@ points_board <- function(n, a, N){
 points_board(30, 1, 1000)
 
 
-# 4. 
+# 4 
 
-avg_points_board <- function(N){ 
+points_board_mod <- function(a, n, Nsims){ 
   
-  a <- 6
-  n <- 30
+  N = Nsims
   
   mat <- matrix(NA, nrow = n, ncol = N)
   
@@ -514,9 +440,11 @@ avg_points_board <- function(N){
     for (i in 1:n) {
       
       flip <- rbinom(1, 1, 0.5)
+      
       potential = ifelse(flip == 1, current + 1, current - 1)
       
       potential = ifelse(potential == 13, 1, potential)
+      potential = ifelse(potential == 0, 12, potential)
       
       red <- rep(0, current)
       blue <- rep(1, potential)
@@ -528,9 +456,9 @@ avg_points_board <- function(N){
       current <- ifelse(pick == 1, potential, current)
       
       outcomes[i] <- current
-      
-      mat[,j] <- outcomes
     }
+    
+    mat[, j] <- outcomes
     
   }
   # print(mat)
@@ -538,95 +466,68 @@ avg_points_board <- function(N){
   d <- as.data.frame(mat)
   
   sums <- d |>
-    colSums()/30
+    colSums()/n
   
-  sums_df <- as.data.frame(sums)
+  sums <- as.data.frame(sums)
   
-  summaries <- sums_df |>
-    summarize(n = n(),
-      avg = mean(sums),
-      sd = sqrt(var(sums)),
-      lower = avg - 1.96 * sd/sqrt(n),
-      upper = avg + 1.96 * sd/sqrt(n))
+  ret <- sums |>
+    mutate(dat = sums) |>
+    summarise(mean = round(mean(sums), 3),
+              lower = round(mean - sqrt(var(sums)/N), 3),
+              upper = round(mean + sqrt(var(sums)/N), 3),
+              width = upper - lower,
+              CI = paste0("(",lower, ", ", upper, ")")) |>
+    select(-c(lower, upper, width))
   
-  cat(paste0("After ", N, " trials, the mean number of points over 30 rounds is ", 
-         round(summaries$avg, 3), ", and the 95% confidence interval is (", 
-         round(summaries$lower, 3), ", ", round(summaries$upper, 3), ")"))
-  
-  sums_df |>
-    ggplot(aes(x = sums)) +
-    geom_histogram(binwidth = 0.4) +
-    theme_bw() +
-    labs(x = "Points per Move", y = "Frequency")
-
-
-}
-
-avg_points_board(1000)
-
-#5. 
-
-# What if we are thinking about this issue of B5 all wrong. 
-# The only thing that affects the expectation of the number of points you earn 
-# is the square you are on right now, and the number of turns after this. 
-# The observations are indipendent
-# so the answer would be, however many moves it takes 
-# until the two players are on the same square
-
-points_thresh <- function(thresh){ 
-  
-  a <- 1
-  n <- thresh + 30
-    
-    outcomes <- rep(0, n)
-    current = a
-    
-    
-    for (i in 1:n) {
-      
-      flip <- rbinom(1, 1, 0.5)
-      potential = ifelse(flip == 1, current + 1, current - 1)
-      
-      potential = ifelse(potential == 13, 1, potential)
-      
-      red <- rep(0, current)
-      blue <- rep(1, potential)
-      
-      full <- c(red, blue)
-      
-      pick <- sample(full, 1)
-      
-      current <- ifelse(pick == 1, potential, current)
-      
-      outcomes[i] <- current
-      
-    }
-
-    d <- as.data.frame(outcomes)
-    
-    d_slice <- d |>
-      slice((thresh + 1):n())
-    
-    ppm <- sum(d_slice$outcomes)/nrow(d_slice)
-    
-    ppm_var <- 
-  
-  cat(paste0("After ", thresh, " moves are discarded, the mean number of points per round over the next ", 
-             n-thresh, " moves is ", 
-             round(ppm, 3)))
-  
-  # sums_df |>
-  #   ggplot(aes(x = sums)) +
-  #   geom_histogram(binwidth = 0.4) +
-  #   theme_bw() +
-  #   labs(x = "Points per Move", y = "Frequency")
-  
+  return(ret)
   
 }
 
-points_thresh(1000)
+points_board_mod(6, 30, 1000)
+
+# reports the mean number of points per move over 30 moves and the 95% CI of 
+# that estimate. the paramter for that function adjusts the number of trials of
+# 30-move games.
+
+
+# 5. 
+
+points_board_mod(6, 30, 1500)
+
+# given that this output shows that the width of the 95% confidence interval 
+# on the mean at 1500 simulations is on the order of 0.1, the threshold function
+# for number 5 will be based on runs of 1500 simulations with a threshold value
+# of 0.1 for a difference in the mean number of points per move.
 
 
 
+# function that takes a threshold, representing a difference in means of the two
+# runs, one starting at 1, one starting at 6. 
+
+points_thresh <- function(n_start, threshold){
+  
+  diff <- 1
+  n <- n_start
+  
+  while (diff > threshold){
+    
+    x = points_board_mod(1, n, 1500)
+    ones <- x$mean
+    
+    y = points_board_mod(6, n, 1500)
+    sixes <- y$mean
+    
+    diff = abs(sixes - ones)
+    n = n + 10
+    
+  }
+  return(n)
+}
+
+points_thresh(700, 0.1)
 
 
+# This output shows that for runs of 1500 simulations, and a mean points per 
+# move threshold of 0.1, it takes around 700 moves for the player who starts at
+# square 1 and the player that starts at square 6 to have the same mean points
+# per move at our threshold level.
