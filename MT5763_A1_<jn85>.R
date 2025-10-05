@@ -15,8 +15,10 @@ set.seed(3)
 res <- rep(0, 10)
 
 for (i in 1:10) {
+  
   res[i] <- 
     (sample(seq(1, 12, 1), 1) -  sum((sample(seq(1, 6, 1), 2, replace = TRUE))))
+  
 }
 
 res
@@ -34,8 +36,11 @@ res
  # either 0 for a draw/tie, 1 when player 1 wins or 2 when player 2 wins.
  
  single_game <- function(){
+   
    x <- (sample(seq(1, 12, 1), 1) -  sum((sample(seq(1, 6, 1), 2, replace = TRUE))))
-   case_when(
+   # simulates the game once
+   
+   case_when( # turns score result into requested output
      x > 0 ~ 1,
      x == 0 ~ 0,
      x < 0 ~ 2
@@ -54,11 +59,13 @@ res
  # function that plays the game multiple times and outputs the 
  # probability of each of the three outcomes.
  
- games <- function(N){ # N allows us to change the number of games played
+ games <- function(N){ # N parameter is number of games played
    
-   if (!is.numeric(N) || N <= 0 || N != floor(N)) {
+   if (!is.numeric(N) || N <= 0 || N != floor(N)) { 
+     # checks if N is not numeric, less than or equal to 0, or not a whole number
+     
      cat(sprintf("The N value proided is not an integer, try using a positive whole number. You provided %s.\n", N))
-     return(invisible(NULL)) # Stop execution and return nothing
+     return(invisible(NULL)) # Stops the run and returns nothing
    }
    
    
@@ -66,6 +73,7 @@ res
    p1 <- rep(0, N)
    tie <- rep(0, N)
    p2 <- rep(0, N)
+   # sets empty vectors for responses
   
    
    for (i in 1:N) {
@@ -74,24 +82,33 @@ res
      p1[i] <- ifelse(x[i] > 0, 1, 0)
      p2[i] <- ifelse(x[i] < 0, 1, 0)
      tie[i] <- ifelse(x[i] == 0, 1, 0)
+     
+     # This loop simulates the game N times, stores results in the vectors set above
 
    }
-   p1s <- (sum(p1)/N)*100
-   p2s <- (sum(p2)/N)*100
-   ties <- (sum(tie)/N)*100
+   p1s <- (sum(p1)/N)
+   p2s <- (sum(p2)/N)
+   ties <- (sum(tie)/N)
+   
+   # calculates the probabilities of each outcome
    
    cat(sprintf(
-     "In %s percent of games, player 1 won with the higher score.
-     \nIn %s percent of games, player 2 won with the higher score.
-     \nIn %s percent of games, the players tied with the same score.
+     "Player 1 won with %s probability.
+     \nPlayer 2 won with %s probability.
+     \nThe players tied with %s probability.
      \nThese estimates were based on %s iterations of the game",
      p1s, p2s, ties, N
    ))
-  }
+ }
+ 
+ # prints the outcomes
  
  games(10)
  games(-2)
  games(4.7)
+ 
+ # Three trials of the function, N = 10 will print results,
+ # N = -2 will return the error message, as will N = 4.7
  
 # 4. 
  
@@ -109,6 +126,9 @@ res
  games_viz <- function(N){
    
    if (!is.numeric(N) || N <= 0 || N != floor(N)) {
+     
+     # checks if N is not numeric, less than or equal to 0, or not a whole number
+     
      cat(sprintf("The N value proided is not an integer, try using a positive whole number. You provided %s.\n", N))
      return(invisible(NULL)) # Stop execution and return nothing
    }
@@ -118,6 +138,8 @@ res
    tie <- rep(0, N)
    p2 <- rep(0, N)
    res <- rep("", N)
+   
+   # sets empty vectors for responses
    
    for (i in 1:N) {
      x[i] <- 
@@ -130,6 +152,8 @@ res
      
      res[i] <- ifelse(x[i] > 0, "Player 1 Win", 
                       ifelse(x[i] < 0, "Player 2 Win", "Tie"))
+     
+     # This loop simulates the game N times, stores results in the vectors set above
      
    }
    p1s <- (sum(p1)/N)
@@ -146,6 +170,8 @@ res
             lower = prop - 1.96 * sd,
             upper = prop + 1.96 * sd)
    
+   # Creates the dataframe of results, sets up for plotting
+   
    ggplot(plot_data, aes(x = res, y = prop, fill = res)) +
      geom_col() +
      geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
@@ -155,11 +181,14 @@ res
        y = paste0("Proportion (out of ", N, ")"),
        title = "Bar graph with 95% Confidence Intervals") +
      guides(fill=guide_legend(title="Results"))
+   
+   # plot for the proportion of wins for each of player 1 win, player 2 win, and tie
  }
 
 games_viz(10000)
 
 # From those two pieces of analysis, I would prefer to be player 2 in this game.
+# Player two seems to have a signficant advantage in number of wins
 
 
 # 5. 
@@ -170,6 +199,8 @@ games_viz(10000)
 games_est_mod <- function(N){ # N allows us to change the number of games played
   
   if (!is.numeric(N) || N <= 0 || N != floor(N)) {
+    # checks if N is not numeric, less than or equal to 0, or not a whole number
+    
     cat(sprintf("The N value proided is not an integer, try using a positive whole number. You provided %s.\n", N))
     return(invisible(NULL)) # Stop execution and return nothing
   }
@@ -180,6 +211,8 @@ games_est_mod <- function(N){ # N allows us to change the number of games played
   tie <- rep(0, N)
   p2 <- rep(0, N)
   
+  # creates storage vectors
+  
   
   for (i in 1:N) {
     x[i] <- (sample(seq(1, 12, 1), 1) -  sum((sample(seq(1, 6, 1), 2, replace = TRUE))))
@@ -187,6 +220,8 @@ games_est_mod <- function(N){ # N allows us to change the number of games played
     p1[i] <- ifelse(x[i] > 0, 1, 0)
     p2[i] <- ifelse(x[i] < 0, 1, 0)
     tie[i] <- ifelse(x[i] == 0, 1, 0)
+    
+    # runs the game N times, stores the results
     
   }
   p1_prop <- (sum(p1)/N)
@@ -196,6 +231,8 @@ games_est_mod <- function(N){ # N allows us to change the number of games played
   p1_sd <- sqrt(p1_prop*(1-p1_prop)/N)
   p2_sd <- sqrt(p2_prop*(1-p2_prop)/N)
   tie_sd <- sqrt(tie_prop*(1-tie_prop)/N)
+  
+  # calculates proportions, standard deviations for summary
   
   d <- as.data.frame(matrix(
     data = c(p1_prop, p2_prop, tie_prop, p1_sd, p2_sd, tie_sd),
@@ -212,6 +249,8 @@ games_est_mod <- function(N){ # N allows us to change the number of games played
            width = upper - lower)
   
   return(d)
+  
+  # data wrangling for summaries, returns data frame
   
 }
 
@@ -234,6 +273,10 @@ games_iterate <- function(N_start) {
     
     N <- N + 2500
     result <- games_est_mod(N)
+    
+    # this loop runs with increasing iterations until the width of the CI is
+    # sufficiently narrow to completely ensure the estimates are accurate 
+    # to two decimal places
   }
   
   return(list(N_final = N, result = result))
@@ -249,20 +292,31 @@ games_iterate(600000)
 # Problem B
 # 1. Function for running the game n times, starting at square a.
 
+# for all of these functions, the starting square in the function is always one, 
+# but since I interpreted N moves as the results of N times through the game,
+# the first square recorded in the results vector can be 1, 2, or 12. This is 
+# intentional and true for the rest of this assignment.
+
 
 board <- function(n, a){ 
   
   current = a
   outcomes <- rep(0, n)
   
+  # sets the starting square, empty vector
+  
   for (i in 1:n) {
 
     flip <- rbinom(1, 1, 0.5)
+    # 'flips a coin' to decide whether a move forward or backward is appropriate
     
     potential = ifelse(flip == 1, current + 1, current - 1)
     
     potential = ifelse(potential == 13, 1, potential)
     potential = ifelse(potential == 0, 12, potential)
+    
+    # sets the potential new square, makes sure that going from 12 to 1 and 
+    # 1 to 12 are both correct
     
     red <- rep(0, current)
     blue <- rep(1, potential)
@@ -274,11 +328,16 @@ board <- function(n, a){
     current <- ifelse(pick == 1, potential, current)
     
     outcomes[i] <- current
+    
+    # sets up the 'bag' for outcomes, pulls one ball from the bag, sets the new 
+    # square based on that draw
   }
   print(outcomes)
 }
 
 board(30, 1) 
+
+# prints a vector of which square the player is on after each move.
 
 
 # 2. 
@@ -286,22 +345,28 @@ board(30, 1)
 multi_board <- function(n, a, N){ 
   
   mat <- matrix(NA, nrow = n, ncol = N)
- 
+  # set sup matrix for results
   
   for (j in 1:N){
+    # sets outer loop for multiple iterations
     
     outcomes <- rep(0, n)
     current = a
 
+    # sets the starting square, empty vector
     
     for (i in 1:n) {
       
       flip <- rbinom(1, 1, 0.5)
+      # 'flips a coin' to decide whether a move forward or backward is appropriate
       
       potential = ifelse(flip == 1, current + 1, current - 1)
       
       potential = ifelse(potential == 13, 1, potential)
       potential = ifelse(potential == 0, 12, potential)
+      
+      # sets the potential new square, makes sure that going from 12 to 1 and 
+      # 1 to 12 are both correct
       
       red <- rep(0, current)
       blue <- rep(1, potential)
@@ -314,6 +379,8 @@ multi_board <- function(n, a, N){
       
       outcomes[i] <- current
       
+      # sets up the 'bag' for outcomes, pulls one ball from the bag, sets the new 
+      # square based on that draw
     }
     mat[, j] <- outcomes
   }
@@ -358,10 +425,14 @@ multi_board <- function(n, a, N){
     geom_col() +
     theme_bw() +
     labs(x = "Square", y = "Proportion of each square in 30 moves")
+  
+  # data wrangling and plots for the frequency of each sqaure
     
 }
 
 multi_board(30, 1, 1000)
+
+# runs the above function to estimate the frequency of each square
 
 
 # 3. 
@@ -369,22 +440,28 @@ multi_board(30, 1, 1000)
 points_board <- function(n, a, N){ 
   
   mat <- matrix(NA, nrow = n, ncol = N)
-  
+  # sets a matrix for results storage
   
   for (j in 1:N){
+    # sets outer loop for multiple iterations
     
     outcomes <- rep(0, n)
     current = a
     
+    # sets the starting square, empty vector
     
     for (i in 1:n) {
       
       flip <- rbinom(1, 1, 0.5)
+      # 'flips a coin' to decide whether a move forward or backward is appropriate
       
       potential = ifelse(flip == 1, current + 1, current - 1)
       
       potential = ifelse(potential == 13, 1, potential)
       potential = ifelse(potential == 0, 12, potential)
+      
+      # sets the potential new square, makes sure that going from 12 to 1 and 
+      # 1 to 12 are both correct
       
       red <- rep(0, current)
       blue <- rep(1, potential)
@@ -396,6 +473,9 @@ points_board <- function(n, a, N){
       current <- ifelse(pick == 1, potential, current)
       
       outcomes[i] <- current
+      
+      # sets up the 'bag' for outcomes, pulls one ball from the bag, sets the new 
+      # square based on that draw
     }
     
     mat[, j] <- outcomes
@@ -417,6 +497,8 @@ points_board <- function(n, a, N){
     theme_bw() +
     labs(x = "Average Score per Move", y = "Frequency")
   
+  # data wrangling and plot for average points per move
+  
 }
 
 points_board(30, 1, 1000)
@@ -429,22 +511,28 @@ points_board_mod <- function(a, n, Nsims){
   N = Nsims
   
   mat <- matrix(NA, nrow = n, ncol = N)
-  
+  # sets empty matrix for results storage
   
   for (j in 1:N){
+    # sets outer loop for multiple runs
     
     outcomes <- rep(0, n)
     current = a
     
+    # sets the starting square, empty vector
     
     for (i in 1:n) {
       
       flip <- rbinom(1, 1, 0.5)
+      # 'flips a coin' to decide whether a move forward or backward is appropriate
       
       potential = ifelse(flip == 1, current + 1, current - 1)
       
       potential = ifelse(potential == 13, 1, potential)
       potential = ifelse(potential == 0, 12, potential)
+      
+      # sets the potential new square, makes sure that going from 12 to 1 and 
+      # 1 to 12 are both correct
       
       red <- rep(0, current)
       blue <- rep(1, potential)
@@ -456,6 +544,9 @@ points_board_mod <- function(a, n, Nsims){
       current <- ifelse(pick == 1, potential, current)
       
       outcomes[i] <- current
+      
+      # sets up the 'bag' for outcomes, pulls one ball from the bag, sets the new 
+      # square based on that draw
     }
     
     mat[, j] <- outcomes
@@ -473,13 +564,15 @@ points_board_mod <- function(a, n, Nsims){
   ret <- sums |>
     mutate(dat = sums) |>
     summarise(mean = round(mean(sums), 3),
-              lower = round(mean - sqrt(var(sums)/N), 3),
-              upper = round(mean + sqrt(var(sums)/N), 3),
+              lower = round(mean - 1.96 * sqrt(var(sums)/N), 3),
+              upper = round(mean + 1.96 * sqrt(var(sums)/N), 3),
               width = upper - lower,
               CI = paste0("(",lower, ", ", upper, ")")) |>
     select(-c(lower, upper, width))
   
   return(ret)
+  
+  # sets up data frame and result object for estimation
   
 }
 
@@ -505,23 +598,30 @@ points_board_mod(6, 30, 1500)
 # runs, one starting at 1, one starting at 6. 
 
 points_thresh <- function(n_start, threshold){
+  # sets up a function to calculate the number of iterations until the 
+  # difference between players starting at 1 and 6 is below the input threshold
   
   diff <- 1
   n <- n_start
   
   while (diff > threshold){
+    # sets up while loop for threshold
     
     x = points_board_mod(1, n, 1500)
     ones <- x$mean
+    # points for player starting at 1
     
     y = points_board_mod(6, n, 1500)
     sixes <- y$mean
+    # points for player starting at 6
     
     diff = abs(sixes - ones)
     n = n + 10
+    # checks the mean difference, adds iterations
     
   }
   return(n)
+  # returns final number of iterations
 }
 
 points_thresh(700, 0.1)
