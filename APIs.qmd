@@ -1,0 +1,35 @@
+---
+title: "APIs"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(httr)
+library(jsonlite)
+```
+
+```{r}
+# gbif (global biodiversity information facility)
+
+url <- "https://api.gbif.org/v1"
+
+species <- "Fratercula arctica"
+
+response <- GET(url = paste0(url, "/species/match"),
+                query = list(name = species))
+
+species_key <- content(response)$usageKey
+
+response_occurrences <- GET(url = paste0(url, "/occurrence/search"),
+                  query = list(taxonKey = species_key,
+                  hasCoordinate = "true", limit = 1000))
+```
+
+```{r}
+dat_json <- readBin(response_occurrences$content, "text")
+
+dat <- fromJSON(dat_json)$results
+```
+
+

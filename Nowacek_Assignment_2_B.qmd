@@ -1,0 +1,319 @@
+---
+title: "Nowacek_Assignment_2_B"
+format: html
+---
+
+```{r, message=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(forcats)
+```
+
+This quarto document repeatedly uses the 'here()' function from the 'here' package to call the data. This function relies on you having downloaded the datafile "Fortune24.csv" and having it available in your current R project. 
+
+## Question 1
+
+B
+
+## Question 2
+
+```{r, message=FALSE}
+raw24 <- read_csv(
+  file = here::here("Fortune24.csv"),
+  col_types = 
+    list(
+        ...1 = col_double(),
+        company = col_character(),
+        rank = col_double(),
+        revenues = col_double(),
+        profits = col_double(),
+        employees = col_double(),
+        sector = col_character(),
+        city = col_character(),
+        state = col_character(),
+        ceo_founder = col_character(),
+        ceo_woman = col_character(),
+        profitable = col_character(),
+        market_cap = col_double(),
+        website = col_character(),
+        ticker = col_character(),
+        assets = col_double())
+  )
+```
+
+## Question 3
+
+D
+
+## Question 4
+
+```{r, message=FALSE}
+
+fortune2024 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FALSE) |>
+  
+  # 1.Parses money fields to numeric
+  mutate(across(where(is.character) & ends_with("s"), readr::parse_number)) |>
+  
+  # 2. Coerces employees numeric;
+  # 3. Maps "yes" to logical FounderCEO/WomanCEO;
+  mutate(employees = as.numeric(employees),
+         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
+         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+  
+  # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
+  rename(
+    Company = company, 
+    Sector = sector, 
+    State = state, 
+    MarketCap = market_cap, 
+    Revenue = revenues, 
+    Profits = profits, 
+    Assets = assets, 
+    Employees = employees, 
+    FounderCEO = ceo_founder, 
+    WomanCEO = ceo_woman
+    ) |>
+  
+  # 5. Orders Sector by median Revenue (descending) using forcats.
+  group_by(Sector) |>
+  mutate(median_revenue_by_sector = median(Revenue)) |>
+  ungroup() |>
+  mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE))
+```
+
+## Question 5
+
+C
+
+## Question 6
+
+```{r, message=FALSE}
+fortune2024_q6 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FALSE) |>
+  
+  # 1.Parses money fields to numeric
+  mutate(across(where(is.character) & ends_with("s"), readr::parse_number)) |>
+  
+  # 2. Coerces employees numeric;
+  # 3. Maps "yes" to logical FounderCEO/WomanCEO;
+  mutate(employees = as.numeric(employees),
+         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
+         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+  
+  # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
+  rename(
+    Company = company, 
+    Sector = sector, 
+    State = state, 
+    MarketCap = market_cap, 
+    Revenue = revenues, 
+    Profits = profits, 
+    Assets = assets, 
+    Employees = employees, 
+    FounderCEO = ceo_founder, 
+    WomanCEO = ceo_woman
+    ) |>
+  
+  # 5. Orders Sector by median Revenue (descending) using forcats.
+  group_by(Sector) |>
+  mutate(median_revenue_by_sector = median(Revenue)) |>
+  ungroup() |>
+  mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE))
+```
+
+```{r}
+table_data <- fortune2024_q6 |>
+  group_by(Sector) |>
+  summarise(Mean = mean(Revenue),
+            Median = median(Revenue),
+            `Trimmed Mean` = mean(Revenue, trim = 0.1),
+            `Percentage with a Woman Ceo` = sum(WomanCEO) / nrow(fortune2024))
+
+kableExtra::kable(table_data, digits = 3)
+  
+```
+
+## Question 7
+
+B
+
+## Question 8
+
+```{r, message=FALSE}
+fortune2024_q8 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FALSE) |>
+  
+  # 1.Parses money fields to numeric
+  mutate(across(where(is.character) & ends_with("s"), readr::parse_number)) |>
+  
+  # 2. Coerces employees numeric;
+  # 3. Maps "yes" to logical FounderCEO/WomanCEO;
+  mutate(employees = as.numeric(employees),
+         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
+         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+  
+  # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
+  rename(
+    Company = company, 
+    Sector = sector, 
+    State = state, 
+    MarketCap = market_cap, 
+    Revenue = revenues, 
+    Profits = profits, 
+    Assets = assets, 
+    Employees = employees, 
+    FounderCEO = ceo_founder, 
+    WomanCEO = ceo_woman
+    ) |>
+  
+  # 5. Orders Sector by median Revenue (descending) using forcats.
+  group_by(Sector) |>
+  mutate(median_revenue_by_sector = median(Revenue)) |>
+  ungroup() |>
+  mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE)) |>
+  
+  # add RevenueEmployee variable
+  
+  mutate(RevenueEmployee = Revenue/Employees) |>
+  drop_na(RevenueEmployee, WomanCEO, Sector)
+```
+
+```{r}
+set.seed(1) # for reproducibility
+
+NRepeat <- 2000 # no. of bootstrapped samples
+
+bootRes <- matrix(data = NA, nrow = NRepeat, ncol = 1) 
+
+# Loop across all samples
+for (i in seq(NRepeat))
+{
+  # Stratified resample by sector
+  bootData <- fortune2024_q8 |>
+    group_by(Sector) |>
+    slice_sample(prop = 1, replace = TRUE) |>
+    ungroup()
+  
+  # Compute difference in mean RevenueEmployee (WomanCEO TRUE minus FALSE)
+  mean_stats <- bootData |>
+    group_by(WomanCEO) |>
+    summarise(mean = mean(RevenueEmployee, na.rm = TRUE)) |>
+    ungroup()
+  
+  mean_true <- mean_stats$mean[mean_stats$WomanCEO == TRUE]
+  mean_false <- mean_stats$mean[mean_stats$WomanCEO == FALSE]
+  
+  diff_mean <- mean_true - mean_false
+    
+  bootRes[i, 1] <- diff_mean
+}
+
+# 95% bootstrap CI
+quantile(bootRes[, 1], probs = c(0.025, 0.975), na.rm = TRUE)
+```
+
+
+## Question 9
+
+```{r, message=FALSE}
+# fortune2024_q9 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FALSE) |>
+#   
+#   # 1.Parses money fields to numeric
+#   mutate(across(where(is.character) & ends_with("s"), readr::parse_number)) |>
+#   
+#   # 2. Coerces employees numeric;
+#   # 3. Maps "yes" to logical FounderCEO/WomanCEO;
+#   mutate(employees = as.numeric(employees),
+#          ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
+#          ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+#   
+#   # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
+#   rename(
+#     Company = company, 
+#     Sector = sector, 
+#     State = state, 
+#     MarketCap = market_cap, 
+#     Revenue = revenues, 
+#     Profits = profits, 
+#     Assets = assets, 
+#     Employees = employees, 
+#     FounderCEO = ceo_founder, 
+#     WomanCEO = ceo_woman
+#     ) |>
+#   
+#   # 5. Orders Sector by median Revenue (descending) using forcats.
+#   group_by(Sector) |>
+#   mutate(median_revenue_by_sector = median(Revenue)) |>
+#   ungroup() |>
+#   mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE))
+```
+
+```{r}
+# fortune2024_q9 |>
+#   ggplot(aes(x = Revenue, y = Profits)) +
+#   geom_point() +
+#   geom_smooth(method = "lm")
+#   scale_x_log10()
+```
+
+I coded this plot to help answer the question.
+
+B
+
+## Question 10
+
+```{r, message=FALSE}
+fortune2024_q10 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FALSE) |>
+
+  # 1.Parses money fields to numeric
+  mutate(across(where(is.character) & ends_with("s"), readr::parse_number)) |>
+
+  # 2. Coerces employees numeric;
+  # 3. Maps "yes" to logical FounderCEO/WomanCEO;
+  mutate(employees = as.numeric(employees),
+         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
+         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+
+  # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
+  rename(
+    Company = company,
+    Sector = sector,
+    State = state,
+    MarketCap = market_cap,
+    Revenue = revenues,
+    Profits = profits,
+    Assets = assets,
+    Employees = employees,
+    FounderCEO = ceo_founder,
+    WomanCEO = ceo_woman
+    ) |>
+
+  # 5. Orders Sector by median Revenue (descending) using forcats.
+  group_by(Sector) |>
+  mutate(median_revenue_by_sector = median(Revenue)) |>
+  ungroup() |>
+  mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE)) |>
+  
+  # add RevenueEmployee for plotting in SI units
+  
+  mutate(Revenue_millions = Revenue * 1e6,
+         RevenueEmployee = ifelse(!is.na(Revenue_millions) & !is.na(Employees), 
+                                  Revenue_millions/Employees, 0))
+```
+
+```{r}
+fortune2024_q10 |>
+  ggplot(aes(x = RevenueEmployee)) +
+  geom_histogram(binwidth = 1000000) +
+  theme_bw() +
+  scale_x_continuous(labels = label_dollar()) +
+  labs(x = "Revenue Per Employee", y = "Frequency") 
+```
+
+
+
+
+
+
+
+
+
+
