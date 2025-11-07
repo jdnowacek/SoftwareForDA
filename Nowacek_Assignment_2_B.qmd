@@ -68,6 +68,10 @@ raw24 <- read_csv(
 
 D
 
+A fails to differentiate between character and non-character variables
+B uses specific variable names, not as robust, does not follow the instructions
+C targets the wrong variables
+
 ## Question 4
 
 ```{r, message=FALSE}
@@ -108,6 +112,8 @@ fortune2024 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FAL
 ## Question 5
 
 C
+
+The median is typically the best metric for summarizing distributions with significant tails, as the median is not as sensitive to extreme values as is the mean. The trimmed mean addresses some of this issue, but does not take into account the entire dataset, sacrificing information. Standard deviation, like the mean, has weaknesses with skewed distributions including interpretability.
 
 ## Question 6
 
@@ -163,6 +169,8 @@ kableExtra::kable(table_data, digits = 2)
 ## Question 7
 
 B
+
+The stratified bootstrap is by far the best approach of these four, C and D are simply not appropriate tests, while A is not as direct a comparison as B.
 
 ## Question 8
 
@@ -286,6 +294,8 @@ for (i in seq(NRepeat))
 I coded this plot to help answer the question.
 
 B
+
+Just changing the scale in the plot does not make a new variable or change the existing one, to run tests on the log transformed data you would have to make a new variable. 
 
 ## Question 10
 
