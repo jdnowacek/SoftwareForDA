@@ -5,8 +5,7 @@ format: html
 
 ```{r, message=FALSE}
 library(tidyverse)
-library(tidymodels)
-library(forcats)
+library(scales)
 ```
 
 This quarto document repeatedly uses the 'here()' function from the 'here' package to call the data. This function relies on you having downloaded the datafile "Fortune24.csv" and having it available in your current R project. 
@@ -14,6 +13,30 @@ This quarto document repeatedly uses the 'here()' function from the 'here' packa
 ## Question 1
 
 B
+
+Implementing renv:
+
+```{r}
+# This command has been run once in this project already, just here for a record of that 
+
+# renv::init()
+```
+
+```{r}
+# implementation of renv snapshot, not necessary to run every time
+
+
+# renv::snapshot()
+```
+
+
+```{r}
+# when running this file, use this command to ensure package equivalence with
+# the original file building
+
+# renv::restore()
+
+```
 
 ## Question 2
 
@@ -57,8 +80,8 @@ fortune2024 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FAL
   # 2. Coerces employees numeric;
   # 3. Maps "yes" to logical FounderCEO/WomanCEO;
   mutate(employees = as.numeric(employees),
-         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
-         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+         ceo_founder = (ceo_founder == "yes"),
+         ceo_woman = (ceo_woman == "yes")) |>
   
   # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
   rename(
@@ -76,10 +99,11 @@ fortune2024 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = FAL
   
   # 5. Orders Sector by median Revenue (descending) using forcats.
   group_by(Sector) |>
-  mutate(median_revenue_by_sector = median(Revenue)) |>
+  mutate(median_revenue_by_sector = median(Revenue, na.rm = TRUE)) |>
   ungroup() |>
   mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE))
 ```
+
 
 ## Question 5
 
@@ -96,8 +120,8 @@ fortune2024_q6 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = 
   # 2. Coerces employees numeric;
   # 3. Maps "yes" to logical FounderCEO/WomanCEO;
   mutate(employees = as.numeric(employees),
-         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
-         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+         ceo_founder = (ceo_founder == "yes"),
+         ceo_woman = (ceo_woman == "yes")) |>
   
   # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
   rename(
@@ -115,7 +139,7 @@ fortune2024_q6 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = 
   
   # 5. Orders Sector by median Revenue (descending) using forcats.
   group_by(Sector) |>
-  mutate(median_revenue_by_sector = median(Revenue)) |>
+  mutate(median_revenue_by_sector = median(Revenue, na.rm = TRUE)) |>
   ungroup() |>
   mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE))
 ```
@@ -123,12 +147,16 @@ fortune2024_q6 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = 
 ```{r}
 table_data <- fortune2024_q6 |>
   group_by(Sector) |>
-  summarise(Mean = mean(Revenue),
-            Median = median(Revenue),
-            `Trimmed Mean` = mean(Revenue, trim = 0.1),
-            `Percentage with a Woman Ceo` = sum(WomanCEO) / nrow(fortune2024))
+  summarise(`Mean Revenue` = mean(Revenue, na.rm = TRUE),
+            `Median Revenue` = median(Revenue, na.rm = TRUE),
+            `Trimmed Mean Revenue` = mean(Revenue, trim = 0.1, na.rm = TRUE),
+            `Mean Profits` = mean(Profits, na.rm = TRUE),
+            `Median Profits` = median(Profits, na.rm = TRUE),
+            `Trimmed Mean Profits` = mean(Profits, trim = 0.1, na.rm = TRUE),
+            `Percentage with a Woman Ceo` = sum(WomanCEO) / n()) |>
+  arrange(desc(`Median Profits`))
 
-kableExtra::kable(table_data, digits = 3)
+kableExtra::kable(table_data, digits = 2)
   
 ```
 
@@ -147,8 +175,8 @@ fortune2024_q8 <- read_csv(file = here::here("Fortune24.csv"), show_col_types = 
   # 2. Coerces employees numeric;
   # 3. Maps "yes" to logical FounderCEO/WomanCEO;
   mutate(employees = as.numeric(employees),
-         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
-         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+         ceo_founder = (ceo_founder == "yes"),
+         ceo_woman = (ceo_woman == "yes")) |>
   
   # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
   rename(
@@ -207,9 +235,10 @@ for (i in seq(NRepeat))
 }
 
 # 95% bootstrap CI
-quantile(bootRes[, 1], probs = c(0.025, 0.975), na.rm = TRUE)
-```
+# quantile(bootRes[, 1], probs = c(0.025, 0.975), na.rm = TRUE)
 
+# this last line is commented since the question says "show code only"
+```
 
 ## Question 9
 
@@ -269,8 +298,8 @@ fortune2024_q10 <- read_csv(file = here::here("Fortune24.csv"), show_col_types =
   # 2. Coerces employees numeric;
   # 3. Maps "yes" to logical FounderCEO/WomanCEO;
   mutate(employees = as.numeric(employees),
-         ceo_founder = ifelse(ceo_founder == "yes", 1, 0),
-         ceo_woman = ifelse(ceo_woman == "yes", 1, 0)) |>
+         ceo_founder = (ceo_founder == "yes"),
+         ceo_woman = (ceo_woman == "yes")) |>
 
   # 4. Renames to Company, Sector, State, MarketCap, Revenue, Profits, Assets, Employees, FounderCEO, WomanCEO
   rename(
@@ -288,32 +317,27 @@ fortune2024_q10 <- read_csv(file = here::here("Fortune24.csv"), show_col_types =
 
   # 5. Orders Sector by median Revenue (descending) using forcats.
   group_by(Sector) |>
-  mutate(median_revenue_by_sector = median(Revenue)) |>
+  mutate(median_revenue_by_sector = median(Revenue, na.rm = TRUE)) |>
   ungroup() |>
   mutate(Sector = forcats::fct_reorder(Sector, median_revenue_by_sector, .desc = TRUE)) |>
   
   # add RevenueEmployee for plotting in SI units
   
-  mutate(Revenue_millions = Revenue * 1e6,
-         RevenueEmployee = ifelse(!is.na(Revenue_millions) & !is.na(Employees), 
-                                  Revenue_millions/Employees, 0))
+  mutate(
+    RevenueEmployee = ifelse(is.na(Employees) | Employees == 0, 
+                             NA_real_, 
+                             Revenue / Employees))
 ```
 
 ```{r}
 fortune2024_q10 |>
   ggplot(aes(x = RevenueEmployee)) +
-  geom_histogram(binwidth = 1000000) +
+  geom_histogram(bins = 25) +
   theme_bw() +
-  scale_x_continuous(labels = label_dollar()) +
+  scale_x_continuous(labels = label_number(scale_cut = cut_short_scale(), 
+                                           prefix = "$", suffix = "M")) +  
   labs(x = "Revenue Per Employee", y = "Frequency") 
 ```
 
 
-
-
-
-
-
-
-
-
+EOF
